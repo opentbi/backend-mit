@@ -1,6 +1,6 @@
 {
-    "app_id": "",
-    "app_hash": "",
-    "telegram_channel": "",
-    "port": 3000
+    "app_id": 0,
+    "app_hash": "CHANGE ME",
+    "telegram_channel": "malingIT",
+    "telegram_bot_token": "YOUR TELEGRAM BOT TOKEN"
 }
