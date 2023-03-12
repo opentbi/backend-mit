@@ -1,11 +1,16 @@
 extern crate serde_json;
 extern crate grammers_client;
 
+mod transferdata;
 mod config;
+mod rest_service;
+mod rest;
+mod rest_util;
+mod rest_controllers;
 
 use grammers_client::{Client, Config};
 use grammers_session::Session;
-use tokio::runtime;
+use tokio::sync::mpsc;
 use crate::config::Config as MitConfig;
 
 type Result = std::result::Result<(), Box<dyn std::error::Error>>;
@@ -25,23 +30,26 @@ async fn mit_main(cfg: MitConfig) -> Result {
         session: Session::load_file_or_create("malingit")?,
         params: Default::default()
     }).await?;
+    let (tx, mut rx) = mpsc::channel::<transferdata::TransferData>(32);
 
     if !client.is_authorized().await? {
         client.bot_sign_in(&cfg.telegram_bot_token, cfg.app_id, &app_hash).await?;
         client.session().save_to_file("malingit")?;
-
-        println!("Logged in as: {}", client.get_me().await?.username().unwrap());
     }
+    println!("Logged in as: {}", client.get_me().await?.username().unwrap());
 
     drop(app_hash);
+
+    tokio::task::spawn(rest::run_maling_itrest(tx));
+
+    while let Some(message) = rx.recv().await {
+        println!("{:?}", message);
+    }
     Ok({})
 }
 
-fn main() -> Result {
+#[tokio::main]
+async fn main() -> Result {
     let cfg = MitConfig::load();
-    runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(mit_main(cfg))
+    mit_main(cfg).await
 }

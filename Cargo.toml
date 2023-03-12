@@ -12,3 +12,6 @@ serde_json = "1.0"
 grammers_client = { git = "https://github.com/Lonami/grammers", branch = "master", package="grammers-client" }
 grammers_session = { git = "https://github.com/Lonami/grammers", branch = "master", package="grammers-session" }
 tokio = { version = "1.26.0", features = ["full"] }
+hyper = { version = "1.0.0-rc.3", features = ["full"] }
+http-body-util = "0.1.0-rc.2" 
+url = "2.3.1"
