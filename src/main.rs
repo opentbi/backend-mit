@@ -2,8 +2,8 @@ extern crate serde_json;
 extern crate grammers_client;
 
 mod transferdata;
+mod channel;
 mod config;
-mod rest_service;
 mod rest;
 mod rest_util;
 mod rest_controllers;
@@ -32,6 +32,9 @@ async fn mit_main(cfg: MitConfig) -> Result {
     }).await?;
     let (tx, mut rx) = mpsc::channel::<transferdata::TransferData>(32);
 
+    unsafe {
+        channel::TRANSMITTER = Some(tx.clone());
+    }
     if !client.is_authorized().await? {
         client.bot_sign_in(&cfg.telegram_bot_token, cfg.app_id, &app_hash).await?;
         client.session().save_to_file("malingit")?;
@@ -40,7 +43,7 @@ async fn mit_main(cfg: MitConfig) -> Result {
 
     drop(app_hash);
 
-    tokio::task::spawn(rest::run_maling_itrest(tx));
+    tokio::task::spawn(rest::run_maling_itrest());
 
     while let Some(message) = rx.recv().await {
         println!("{:?}", message);

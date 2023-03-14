@@ -1,15 +1,18 @@
 use std::collections::HashMap;
 
-use hyper::{Request, body::{Incoming}};
-use tokio::sync::mpsc::Sender;
+use http_body_util::Full;
+use hyper::{Request, body::{Incoming, Bytes}, StatusCode};
 
-use crate::{rest_util, transferdata};
+use crate::{rest_util, transferdata, channel};
 
-pub async fn rest_query_fn(request: Request<Incoming>, tx: Sender<transferdata::TransferData>) -> rest_util::ResultRestFn {
+pub async fn rest_query_fn(request: Request<Incoming>) -> rest_util::ResultRestFn {
     let query = if let Some(qu) = request.uri().query() {
         qu
     } else {
-        return rest_util::build_raw_response("Couldn't get URI", hyper::StatusCode::BAD_REQUEST);
+        return rest_util::ResultRestFn {
+            status: StatusCode::BAD_REQUEST,
+            msg: Full::<Bytes>::from("Missing query")
+        }
     };
     let params = url::form_urlencoded::parse(query.as_bytes())
         .into_owned()
@@ -18,20 +21,32 @@ pub async fn rest_query_fn(request: Request<Incoming>, tx: Sender<transferdata::
     let query_result = if let Some(q) = params.get("query") {
         q
     } else {
-        return rest_util::build_raw_response("Missing query", hyper::StatusCode::BAD_REQUEST);
+        return rest_util::ResultRestFn {
+            status: StatusCode::BAD_REQUEST,
+            msg: Full::<Bytes>::from("Missing query")
+        }
     };
 
     if query_result.len() < 4 {
-        return rest_util::build_raw_response("Invalid query", hyper::StatusCode::BAD_REQUEST);
+        return rest_util::ResultRestFn {
+            status: StatusCode::BAD_REQUEST,
+            msg: Full::<Bytes>::from("Invalid query")
+        }
     }
 
-    tx.send(transferdata::TransferData {
-        t: transferdata::TransferDataType::WebSearchFile,
-        search_file_query: Some(query_result.to_string()),
-        search_file_id: Some(String::new()),
-    }).await.unwrap();
+    unsafe {
+        let tx = channel::TRANSMITTER.clone();
+        tx.unwrap().send(transferdata::TransferData {
+            t: transferdata::TransferDataType::WebSearchFile,
+            search_file_query: Some(query_result.to_string()),
+            search_file_id: Some(String::new()),
+        }).await.unwrap();
+    }
 
     drop(query);
 
-    rest_util::build_raw_response("p", hyper::StatusCode::OK)
+    return rest_util::ResultRestFn {
+        status: StatusCode::OK,
+        msg: Full::<Bytes>::from("Sent")
+    }
 }
