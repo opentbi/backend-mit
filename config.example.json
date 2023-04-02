@@ -2,5 +2,6 @@
     "app_id": 0,
     "app_hash": "CHANGE ME",
     "telegram_channel": "malingIT",
-    "telegram_bot_token": "YOUR TELEGRAM BOT TOKEN"
+    "telegram_phone": "PUT TELEGRAM PHONE NUMBER HERE",
+    "cache_file": "./mit-cache"
 }

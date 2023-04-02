@@ -6,8 +6,9 @@ use serde::{Serialize, Deserialize};
 pub struct Config {
     pub app_id: i32,
     pub app_hash: String,
-    pub telegram_bot_token: String,
-    pub telegram_channel: String
+    pub telegram_channel: String,
+    pub telegram_phone: String,
+    pub cache_file: String
 }
 
 impl Config {

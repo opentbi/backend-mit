@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use http_body_util::Full;
 use hyper::{Request, body::{Incoming, Bytes}, StatusCode};
+use serde_json::json;
 
 use crate::{rest_util, transferdata, channel};
 
@@ -34,19 +35,30 @@ pub async fn rest_query_fn(request: Request<Incoming>) -> rest_util::ResultRestF
         }
     }
 
+    let data: serde_json::Value;
+
     unsafe {
         let tx = channel::TRANSMITTER.clone();
-        tx.unwrap().send(transferdata::TransferData {
-            t: transferdata::TransferDataType::WebSearchFile,
-            search_file_query: Some(query_result.to_string()),
-            search_file_id: Some(String::new()),
+        let (t, r) = tokio::sync::oneshot::channel();
+        tx.unwrap().send(transferdata::TransferData::WebSearchFile {
+            query: query_result.to_string(),
+            resp_tx: t
         }).await.unwrap();
+
+        data = json!(r.await.unwrap().unwrap());
     }
-
+    let data_json = serde_json::to_string(&data);
     drop(query);
+    drop(data);
 
+    if data_json.is_err() {
+        return rest_util::ResultRestFn {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            msg: Full::<Bytes>::from(data_json.unwrap_err().to_string())
+        }
+    }
     return rest_util::ResultRestFn {
         status: StatusCode::OK,
-        msg: Full::<Bytes>::from("Sent")
+        msg: Full::<Bytes>::from(data_json.unwrap())
     }
 }

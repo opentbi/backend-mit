@@ -1,10 +1,16 @@
-#[derive(Debug, Clone)]
-pub enum TransferDataType {
-    WebSearchFile
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WebSearchFileData {
+    pub file_id: String,
+    pub file_name: String,
+    pub file_size: i64,
+    pub file_mime: String
 }
-#[derive(Debug, Clone)]
-pub struct TransferData {
-    pub t: TransferDataType,
-    pub search_file_query: Option<String>,
-    pub search_file_id: Option<String>
+#[derive(Debug)]
+pub enum TransferData {
+    WebSearchFile {
+        query: String,
+        resp_tx: tokio::sync::oneshot::Sender<Option<Vec<WebSearchFileData>>>
+    }
 }
