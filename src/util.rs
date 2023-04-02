@@ -45,5 +45,6 @@ where
         }
     }
 
+    drop(path);
     Ok(())
 }
