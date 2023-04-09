@@ -28,6 +28,23 @@ where
     })
 }
 
+pub async fn find_file<P>(cp: P, fid: i64) -> Result<transferdata::WebSearchFileData>
+where
+    P: AsRef<Path>,
+{
+    let data = cacache::read(cp, fid.to_string()).await;
+    if data.is_err() {
+        return Ok(transferdata::WebSearchFileData {
+            file_id: "".to_string(),
+            file_name: "".to_string(),
+            file_size: 0,
+            file_mime: "".to_string(),
+        });
+    }
+    let doc: transferdata::WebSearchFileData = bincode::deserialize(&data.unwrap()).unwrap();
+    Ok(doc)
+}
+
 pub async fn find_match_file_query<P>(cp: P, t: &mut Vec<transferdata::WebSearchFileData>, query: &String) -> Result<()>
 where
     P: AsRef<Path>,
