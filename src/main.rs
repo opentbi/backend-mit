@@ -60,7 +60,6 @@ async fn mit_main(cfg: MitConfig) -> Result {
     println!("Logged in as: {}", client.get_me().await?.username().unwrap());
 
     drop(app_hash);
-
     tokio::task::spawn(rest::run_maling_itrest());
 
     let maling_it_chat = client.resolve_username(cfg.telegram_channel.as_str()).await
@@ -99,7 +98,19 @@ async fn mit_main(cfg: MitConfig) -> Result {
                     println!("[i] Load data from cache for: {}", query);
                 }
                 resp_tx.send(Some(data)).unwrap();
-            }
+            },
+
+            transferdata::TransferData::WebDownloadFile { file_id, resp_tx } => {
+                let sdata = util::find_file(cfg.cache_file.as_str(), file_id).await?;
+                if sdata.file_id.len() < 5 {
+                    resp_tx.send(None).unwrap();
+                } else {
+                    resp_tx.send(Some(transferdata::WebDownloadFile {
+                        file_id: file_id,
+                        name: sdata.file_name
+                    })).unwrap();
+                }
+            },
         }
     }
     Ok({})
