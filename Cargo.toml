@@ -10,6 +10,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 grammers_client = { git = "https://github.com/Lonami/grammers", branch = "master", package="grammers-client" }
+grammers_tl_types = { git = "https://github.com/Lonami/grammers", branch = "master", package="grammers-tl-types" }
 grammers_session = { git = "https://github.com/Lonami/grammers", branch = "master", package="grammers-session" }
 tokio = { version = "1.26.0", features = ["full"] }
 hyper = { version = "1.0.0-rc.3", features = ["full"] }

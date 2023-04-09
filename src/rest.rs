@@ -10,12 +10,15 @@ async fn service_mit(request: Request<Incoming>) -> rest_util::ResultServiceFn {
         "/find" => {
             rest_controllers::query::rest_query_fn(request).await
         },
+        "/download" => {
+            rest_controllers::download_file::rest_download_file_fn(request).await
+        },
         _ => {
             rest_controllers::non_match::rest_non_match_fn()
         }
     };
 
-    Ok(Response::builder().status(res.status).body(res.msg).unwrap())
+    Ok(Response::builder().header("Content-Type", if res.is_json { "application/json" } else { "text/html" }).status(res.status).body(res.msg).unwrap())
 }
 
 pub async fn run_maling_itrest() {
