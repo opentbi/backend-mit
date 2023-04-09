@@ -2,11 +2,10 @@ use std::collections::HashMap;
 
 use http_body_util::Full;
 use hyper::{Request, body::{Incoming, Bytes}, StatusCode};
-use serde_json::json;
 
-use crate::{rest_util, transferdata, channel};
+use crate::{rest_util, channel, transferdata};
 
-pub async fn rest_query_fn(request: Request<Incoming>) -> rest_util::ResultRestFn {
+pub async fn rest_download_file_fn(request: Request<Incoming>) -> rest_util::ResultRestFn {
     let query = if let Some(qu) = request.uri().query() {
         qu
     } else {
@@ -20,36 +19,37 @@ pub async fn rest_query_fn(request: Request<Incoming>) -> rest_util::ResultRestF
         .into_owned()
         .collect::<HashMap<String, String>>();
 
-    let query_result = if let Some(q) = params.get("query") {
+    let file_id = if let Some(q) = params.get("id") {
         q
     } else {
         return rest_util::ResultRestFn {
             status: StatusCode::BAD_REQUEST,
-            msg: Full::<Bytes>::from("Missing query"),
+            msg: Full::<Bytes>::from("Missing id"),
             is_json: false,
         }
     };
 
-    if query_result.len() < 4 {
+    let ok_id = file_id.to_string().parse::<i64>();
+    if ok_id.is_err() {
         return rest_util::ResultRestFn {
             status: StatusCode::BAD_REQUEST,
-            msg: Full::<Bytes>::from("Invalid query"),
+            msg: Full::<Bytes>::from("File ID is invalid"),
             is_json: false,
         }
     }
 
-    let data: serde_json::Value;
-
+    let data: Option<transferdata::WebDownloadFile>;
     unsafe {
         let tx = channel::TRANSMITTER.clone();
         let (t, r) = tokio::sync::oneshot::channel();
-        tx.unwrap().send(transferdata::TransferData::WebSearchFile {
-            query: query_result.to_string(),
+        tx.unwrap().send(transferdata::TransferData::WebDownloadFile {
+            file_id: ok_id.unwrap(),
             resp_tx: t
         }).await.unwrap();
 
-        data = json!(r.await.unwrap().unwrap());
+        data = r.await.unwrap();
     }
+
     let data_json = serde_json::to_string(&data);
     drop(query);
     drop(data);
