@@ -9,8 +9,11 @@ mod rest;
 mod rest_util;
 mod rest_controllers;
 
+use std::thread;
+
 use grammers_client::{Client, Config, SignInError, types::Media};
 use grammers_session::Session;
+use grammers_tl_types::enums::MessagesFilter;
 use tokio::sync::mpsc;
 use crate::config::Config as MitConfig;
 
@@ -72,7 +75,8 @@ async fn mit_main(cfg: MitConfig) -> Result {
 
                 util::find_match_file_query(cfg.cache_file.as_str(), &mut data, &query).await?;
                 if data.len() < 1 {
-                    let mut msgs = client.search_messages(&maling_it_chat).query(query.as_str());
+                    let mut msgs = client.search_messages(&maling_it_chat).filter(MessagesFilter::InputMessagesFilterDocument)
+                        .query(query.as_str());
                     while let Some(n) = msgs.next().await? {
                         let media = n.media();
                         if !media.is_none() {
@@ -84,7 +88,6 @@ async fn mit_main(cfg: MitConfig) -> Result {
                                         file_name: document.name().to_string(),
                                         file_size: document.size()
                                     });
-
                                     util::write_cache(cfg.cache_file.as_str(), document.id(), data.last().unwrap()).await?;
                                 },
                                 _ => ()
