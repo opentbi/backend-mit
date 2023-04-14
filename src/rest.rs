@@ -18,7 +18,7 @@ async fn service_mit(request: Request<Incoming>) -> rest_util::ResultServiceFn {
         }
     };
 
-    Ok(Response::builder().header("Content-Type", if res.is_json { "application/json" } else { "text/html" }).status(res.status).body(res.msg).unwrap())
+    Ok(Response::builder().header("Content-Type", res.content_type).status(res.status).body(res.msg).unwrap())
 }
 
 pub async fn run_maling_itrest() {

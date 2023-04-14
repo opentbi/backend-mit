@@ -39,6 +39,7 @@ where
             file_name: "".to_string(),
             file_size: 0,
             file_mime: "".to_string(),
+            msg_id: "".to_string()
         });
     }
     let doc: transferdata::WebSearchFileData = bincode::deserialize(&data.unwrap()).unwrap();

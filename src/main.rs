@@ -9,8 +9,6 @@ mod rest;
 mod rest_util;
 mod rest_controllers;
 
-use std::thread;
-
 use grammers_client::{Client, Config, SignInError, types::Media};
 use grammers_session::Session;
 use grammers_tl_types::enums::MessagesFilter;
@@ -86,7 +84,8 @@ async fn mit_main(cfg: MitConfig) -> Result {
                                         file_id: document.id().to_string(),
                                         file_mime: document.mime_type().unwrap_or("-").to_string(),
                                         file_name: document.name().to_string(),
-                                        file_size: document.size()
+                                        file_size: document.size(),
+                                        msg_id: n.id().to_string()
                                     });
                                     util::write_cache(cfg.cache_file.as_str(), document.id(), data.last().unwrap()).await?;
                                 },
@@ -108,10 +107,27 @@ async fn mit_main(cfg: MitConfig) -> Result {
                 if sdata.file_id.len() < 5 {
                     resp_tx.send(None).unwrap();
                 } else {
-                    resp_tx.send(Some(transferdata::WebDownloadFile {
-                        file_id: file_id,
-                        name: sdata.file_name
-                    })).unwrap();
+                    let msgid = [sdata.msg_id.parse::<i32>().unwrap()];
+                    let msg = client.get_messages_by_id(&maling_it_chat, &msgid).await?;
+                    let mut msgiter = msg.into_iter().filter(Option::is_some);
+
+                    if msgiter.clone().count() < 1 {
+                        resp_tx.send(None).unwrap();
+                    } else {
+                        let fmsg = msgiter.nth(0).unwrap().unwrap();
+                        let mut filebytes = Vec::new();
+                        let mut filedl = client.iter_download(&fmsg.media().unwrap());
+                        while let Some(ch) = filedl.next().await? {
+                            filebytes.extend(ch);
+                        }
+                        resp_tx.send(Some(filebytes)).unwrap();
+
+                        drop(fmsg);
+                        drop(filedl);
+                    }
+
+                    drop(msgiter);
+                    drop(msgid);
                 }
             },
         }

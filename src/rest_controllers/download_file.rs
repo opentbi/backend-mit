@@ -12,7 +12,7 @@ pub async fn rest_download_file_fn(request: Request<Incoming>) -> rest_util::Res
         return rest_util::ResultRestFn {
             status: StatusCode::BAD_REQUEST,
             msg: Full::<Bytes>::from("Missing query"),
-            is_json: false,
+            content_type: "text/html".to_string()
         }
     };
     let params = url::form_urlencoded::parse(query.as_bytes())
@@ -25,7 +25,7 @@ pub async fn rest_download_file_fn(request: Request<Incoming>) -> rest_util::Res
         return rest_util::ResultRestFn {
             status: StatusCode::BAD_REQUEST,
             msg: Full::<Bytes>::from("Missing id"),
-            is_json: false,
+            content_type: "text/html".to_string()
         }
     };
 
@@ -34,7 +34,7 @@ pub async fn rest_download_file_fn(request: Request<Incoming>) -> rest_util::Res
         return rest_util::ResultRestFn {
             status: StatusCode::BAD_REQUEST,
             msg: Full::<Bytes>::from("File ID is invalid"),
-            is_json: false,
+            content_type: "text/html".to_string()
         }
     }
 
@@ -50,20 +50,11 @@ pub async fn rest_download_file_fn(request: Request<Incoming>) -> rest_util::Res
         data = r.await.unwrap();
     }
 
-    let data_json = serde_json::to_string(&data);
     drop(query);
-    drop(data);
 
-    if data_json.is_err() {
-        return rest_util::ResultRestFn {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-            msg: Full::<Bytes>::from(data_json.unwrap_err().to_string()),
-            is_json: false,
-        }
-    }
     return rest_util::ResultRestFn {
         status: StatusCode::OK,
-        msg: Full::<Bytes>::from(data_json.unwrap()),
-        is_json: true
+        msg: Full::<Bytes>::from(data.unwrap()),
+        content_type: "application/pdf".to_string()
     }
 }

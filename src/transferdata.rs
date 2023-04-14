@@ -5,14 +5,11 @@ pub struct WebSearchFileData {
     pub file_id: String,
     pub file_name: String,
     pub file_size: i64,
-    pub file_mime: String
+    pub file_mime: String,
+    pub msg_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WebDownloadFile {
-    pub file_id: i64,
-    pub name: String
-}
+pub type WebDownloadFile = Vec::<u8>;
 
 #[derive(Debug)]
 pub enum TransferData {

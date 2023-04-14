@@ -7,6 +7,6 @@ pub fn rest_non_match_fn() -> rest_util::ResultRestFn {
     return rest_util::ResultRestFn {
         status: StatusCode::NOT_FOUND,
         msg: Full::<Bytes>::from("Non-Match"),
-        is_json: false,
+        content_type: "text/html".to_string()
     }
 }
